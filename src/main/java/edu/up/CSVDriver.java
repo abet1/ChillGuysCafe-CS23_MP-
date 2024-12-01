@@ -15,7 +15,18 @@ public class CSVDriver {
     private static final String TRANSACTIONS_FILE = "transactions.csv";
 
 
+    public static void fileCreatorIfNoFile(String fileName) {
+        java.io.File file = new java.io.File(fileName);
+        try{
+            if(!file.exists()){
+                file.createNewFile();
+            }
+        }catch(java.io.IOException e){
+            System.out.println("Error creating file" + fileName +e.getMessage());
+        }
+    }
     public static List<Item> showItems(){
+        fileCreatorIfNoFile(MENU_FILE);
         List<Item> items = new ArrayList<>();
         try (CSVReader fileReader = new CSVReader(new FileReader(MENU_FILE))) {
             String[] nextLine;
@@ -33,6 +44,7 @@ public class CSVDriver {
     }
 
     public static void saveItem(List<Item> items) {
+        fileCreatorIfNoFile(MENU_FILE);
         try(CSVWriter filewriter = new CSVWriter(new FileWriter(MENU_FILE))) {
             for (Item item : items) {
                 filewriter.writeNext(new String[]{
@@ -43,6 +55,7 @@ public class CSVDriver {
                         item.getSizePrice(),
                         item.getCustomization()
                 });
+                System.out.println("Item " + item.getItemCode() + " is added successfully to the menu.");
             }
         } catch (IOException e){
             System.out.println("\nError writing into menu file: " + e.getMessage());
@@ -50,6 +63,7 @@ public class CSVDriver {
     }
 
     public static void saveTransactions(List<Transactions> transactions, double totalPrice){
+        fileCreatorIfNoFile(TRANSACTIONS_FILE);
         try(CSVWriter filewriter = new CSVWriter(new FileWriter(TRANSACTIONS_FILE))) {
             for (Transactions transaction : transactions) {
                 filewriter.writeNext(new String[]{
