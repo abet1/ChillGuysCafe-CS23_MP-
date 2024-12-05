@@ -5,6 +5,7 @@ import java.util.Scanner;
 public class BasicItemsAndSaleSystem {
 
     public static void main(String[] args) {
+        SQLDriver.sqlSetUp();
         Scanner userInput = new Scanner(System.in);
         while(true) {
             System.out.println("Select user:");

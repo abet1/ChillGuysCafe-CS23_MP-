@@ -3,6 +3,8 @@ package edu.up;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,42 +26,44 @@ public class ManagerServices {
         String customization = userInput.nextLine();
 
         String itemCode = itemCodeGenerator(category, name);
-        Item newItem = new ProductToSell(itemCode, name, itemType ,category, sizePrice, customization);
-        List<Item> items = CSVDriver.showItems();
-        items.add(newItem);
-        CSVDriver.saveItem(items);
-
-        System.out.println("Item " + itemCode + " is added successfully to the menu.");
+        SQLDriver.sqlAddMenuItem(itemCode, name, itemType ,category, sizePrice, customization);
     }
 
     public static void encodeItem(Scanner userInput){
         System.out.println("\nEncode Item");
-        System.out.print("Enter the filename of encode items(csv file): ");
+        System.out.print("Enter the filename to encode items(txt file): ");
         String filename = userInput.nextLine();
+        List<Item> items = SQLDriver.sqlLoadMenuItems();
 
-        try(CSVReader filereader = new CSVReader(new FileReader(filename))){
-            List<Item> items = CSVDriver.showItems();
-            String[] nextLine;
+        try{
+            File file = new File(filename);
+            Scanner fileReader = new Scanner(file);
 
-            while((nextLine = filereader.readNext()) != null){
-                if(nextLine.length == 6){
-                    String itemCode = nextLine[0];
-                    String itemName = nextLine[1];
-                    String itemType = nextLine[2];
-                    String itemCategory = nextLine[3];
-                    String itemSize = nextLine[4];
-                    String customization = nextLine[5];
+
+            while(fileReader.hasNextLine()){
+                String line = fileReader.nextLine();
+                String [] itemInformation = line.split(",");
+                if(itemInformation.length == 6){
+                    String itemCode = itemInformation[0];
+                    String itemName = itemInformation[1];
+                    String itemType = itemInformation[2];
+                    String itemCategory = itemInformation[3];
+                    String itemSize = itemInformation[4];
+                    String customizations = itemInformation[5];
 
                     if (itemCode == null || itemCode.isBlank() || isDuplicateItemCode(items, itemCode)){
                         itemCode = itemCodeGenerator(itemCategory, itemName);
                     }
+
+                    SQLDriver.sqlAddMenuItem(itemCode, itemName, itemType, itemCategory, itemSize, customizations);
+                    System.out.println("Item " + itemCode +":"+itemName+ " added to the database");
+                }else{
+                    System.out.println("Invalid format in file line: " + line);
                 }
             }
 
-        }catch(IOException e){
-            System.out.println("Error reading file" + e);
-        } catch (CsvValidationException e) {
-            System.out.println("Invalid format" + e);
+        }catch(FileNotFoundException e){
+            System.out.println("File not found" + e.getMessage());
         }
     }
 
@@ -79,14 +83,8 @@ public class ManagerServices {
         System.out.println("\nModify Item");
         System.out.print("Enter the item code of the item you want to modify: ");
         String itemCode = userInput.nextLine().trim();
-        List<Item> items = CSVDriver.showItems();
+        itemToModify = SQLDriver.sqlFindMenuItem(itemCode);
 
-        for (Item item : items) {
-            if (item.getItemCode().equals(itemCode)) {
-                itemToModify = item;
-                break;
-            }
-        }
         if (itemToModify == null) {
             System.out.println("Item with code" + itemCode + " does not exist in the menu.");
             return;
@@ -98,33 +96,37 @@ public class ManagerServices {
         System.out.println("Size and Price: " + itemToModify.getSizePrice());
         System.out.println("Customization: " + itemToModify.getCustomization());
 
-        System.out.println("What do you want to modify?");
-        System.out.println("1. Size and Price");
-        System.out.println("2. Customization");
-        System.out.println("3. Exit");
-        String choice = userInput.nextLine().trim();
+        String choice = "0";
+        while(!choice.equals("3")) {
+            System.out.println("What do you want to modify?");
+            System.out.println("1. Size and Price");
+            System.out.println("2. Customization");
+            System.out.println("3. Exit");
+            choice = userInput.nextLine().trim();
 
-        switch (choice) {
-            case "1":
-                System.out.print("Enter the new size and prices of the item: ");
-                String newSizePrice = userInput.nextLine();
-                itemToModify.setSizePrice(newSizePrice);
-                break;
-            case "2":
-                System.out.print("Enter the new customizations of the item: ");
-                String newCustomization = userInput.nextLine();
-                itemToModify.setCustomization(newCustomization);
-                break;
-            case "3":
-                System.out.print("Exiting modify item menu. Goodbye!");
-                break;
-            default:
-                System.out.println("Invalid choice. Try again.");
+
+            switch (choice) {
+                case "1":
+                    System.out.print("Enter the new size and prices of the item: ");
+                    String newSizePrice = userInput.nextLine();
+                    itemToModify.setSizePrice(newSizePrice);
+                    break;
+                case "2":
+                    System.out.print("Enter the new customizations of the item: ");
+                    String newCustomization = userInput.nextLine();
+                    itemToModify.setCustomization(newCustomization);
+                    break;
+                case "3":
+                    System.out.print("Exiting modify item menu. Goodbye!");
+                    break;
+                default:
+                    System.out.println("Invalid choice. Try again.");
+            }
         }
+        String sizePrice=itemToModify.getSizePrice();
+        String customizations=itemToModify.getCustomization();
 
-        CSVDriver.saveItem(items);
-        System.out.println("Item " + itemToModify.getItemCode() + " has been modified successfully.");
-
+        SQLDriver.sqlModifyMenuItem(itemCode, sizePrice, customizations);
 
 
     }
@@ -134,14 +136,9 @@ public class ManagerServices {
         System.out.println("\nDelete Item");
         System.out.print("Enter the item code of the item you want to delete: ");
         String itemCode = userInput.nextLine().trim();
-        List<Item> items = CSVDriver.showItems();
 
-        for (Item item : items) {
-            if (item.getItemCode().equals(itemCode)) {
-                itemToDelete = item;
-                break;
-            }
-        }
+        itemToDelete = SQLDriver.sqlFindMenuItem(itemCode);
+
         if (itemToDelete == null) {
             System.out.println("Item with code" + itemCode + " does not exist in the menu.");
             return;
@@ -157,7 +154,7 @@ public class ManagerServices {
         String choice = userInput.nextLine().trim().toLowerCase();
         switch (choice) {
             case "yes":
-                items.removeIf(item -> item.getItemCode().equals(itemCode));
+                SQLDriver.sqlDeleteMenuItem(itemCode);
                 break;
             case "no":
                 System.out.println("Item with code" + itemCode + " will not be deleted. Goodbye!");

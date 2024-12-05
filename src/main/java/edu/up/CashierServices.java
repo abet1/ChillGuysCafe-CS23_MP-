@@ -9,20 +9,57 @@ import java.util.Scanner;
 
 public class CashierServices {
     public static void placeOrder(Scanner userChoice){
-        List<Item> items = CSVDriver.showItems();
+        List<Item> items = SQLDriver.sqlLoadMenuItems();
         List<Transactions> addToCart = new ArrayList<>();
         double totalPrice = 0.00;
 
-        System.out.println("\nWhat type of item do you want to buy: (drink, food, merchandise)");
-        String itemType = userChoice.nextLine();
-        System.out.println("Here's the available " + itemType + ":");
-        for (Item item : items) {
-            if(item.getItemType().equalsIgnoreCase(itemType)){
-                System.out.println(item.getItemCode() + ":" + item.getName() +":"+ item.getCategory());
-            }
-        }
-
         while(true){
+
+            System.out.println("\nWhat type of item do you want to buy: (drink, food, merchandise)");
+            System.out.println("If you don't want to proceed type 'done'");
+            String itemType = userChoice.nextLine().trim();
+
+            if(itemType.equalsIgnoreCase("done")){
+                System.out.println("Exiting order process!");
+                break;
+            }
+
+            if(!itemType.equalsIgnoreCase("drink")&&!itemType.equalsIgnoreCase("food")&&!itemType.equalsIgnoreCase("merchandise")){
+                System.out.println("Invalid item type. Please choose Drink, Food, or Merchandise.");
+                continue;
+            }
+
+            ArrayList<String> categories = new ArrayList<>();
+            for (Item item : items) {
+                if(item.getItemType().equalsIgnoreCase(itemType)){
+                    if(!categories.contains(item.getCategory())){
+                        categories.add(item.getCategory());
+                    }
+                }
+            }
+
+            if(categories.isEmpty()){
+                System.out.println("There is no available product for you chosen item type");
+                continue;
+            }
+
+            System.out.println("Here's the available " + itemType + " categories:");
+            for(String category : categories){
+                System.out.println(category);
+            }
+
+            System.out.println("Enter the category you want to view");
+            String selectedCategory = userChoice.nextLine().trim();
+
+
+            ArrayList<String> itemNames = new ArrayList<>();
+            for(Item item : items){
+                if(item.getItemType().equalsIgnoreCase(itemType)&&item.getName().equalsIgnoreCase(selectedCategory)){
+                    itemNames.add(item.getName());
+                }
+            }
+            System.out.println("\nItems in category " + selectedCategory + ":");
+
             Item itemToOrder = null;
             System.out.println("Enter the item code of order or type done to finish:");
             String itemCodeOrder = userChoice.nextLine();
@@ -97,7 +134,6 @@ public class CashierServices {
 
         if(!addToCart.isEmpty()){
             receiptGenerator(addToCart, totalPrice);
-            CSVDriver.saveTransactions(addToCart, totalPrice);
         }else{
             System.out.println("No items added to your cart.");
         }
@@ -123,7 +159,7 @@ public class CashierServices {
         for(Transactions transaction : addToCart){
             transaction.displayDetails();
         }
-        System.out.println("--------------------");
+        System.out.println("------------------------");
         System.out.printf("Total Price: %.2f\n", totalPrice);
         System.out.println("Thank you, come again!!");
     }
