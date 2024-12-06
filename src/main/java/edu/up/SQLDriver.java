@@ -125,7 +125,7 @@ public class SQLDriver {
 
             pstmt.setString(1, itemCode);
             ResultSet result = pstmt.executeQuery();
-            if(result.next()){
+            while(result.next()){
                 item = new ProductToSell(
                         result.getString("itemCode"),
                         result.getString("Name"),
@@ -150,7 +150,7 @@ public class SQLDriver {
 
             pstmt.setString(1, category);
             ResultSet result = pstmt.executeQuery();
-            if(result.next()){
+            while(result.next()){
                 items.add(new ProductToSell(
                         result.getString("itemCode"),
                         result.getString("Name"),
@@ -175,7 +175,7 @@ public class SQLDriver {
 
             pstmt.setString(1, itemType);
             ResultSet result = pstmt.executeQuery();
-            if(result.next()){
+            while(result.next()){
                 items.add(new ProductToSell(
                         result.getString("itemCode"),
                         result.getString("Name"),

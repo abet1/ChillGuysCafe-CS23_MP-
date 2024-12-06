@@ -27,7 +27,7 @@ public class Transactions extends Item {
                 quantity,
                 getName(),
                 getSizePrice(),
-                getCustomization().equals("None") ? "No Customization" : getCustomization(),
+                getCustomization().equalsIgnoreCase("None") ? "No Customization" : getCustomization(),
                 totalPrice);
     }
 }
