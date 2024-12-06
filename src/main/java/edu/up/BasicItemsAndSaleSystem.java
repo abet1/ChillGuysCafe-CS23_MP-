@@ -8,7 +8,7 @@ public class BasicItemsAndSaleSystem {
         SQLDriver.sqlSetUp();
         Scanner userInput = new Scanner(System.in);
         while(true) {
-            System.out.println("Select user:");
+            System.out.println("\nSelect user:");
             System.out.println("(1) Manager");
             System.out.println("(2) Cashier");
             System.out.println("(3) Exit");

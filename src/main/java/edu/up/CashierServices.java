@@ -64,28 +64,17 @@ public class CashierServices {
                 }
             }
 
-            System.out.println("Enter quantity");
-            int quantity;
-            try{
-                quantity = userChoice.nextInt();
-                userChoice.nextLine();
-                if(quantity<=0){
-                    System.out.println("Quantity must be greater than 0. Please try again. The order is cancelled.");
-                    continue;
-                }
-            }catch(InputMismatchException e){
-                System.out.println("Invalid quantity. Please enter a valid integer. The order is cancelled.");
-                userChoice.nextLine();
-                continue;
-            }
+
+            int quantity = itemQuantity(userChoice);
 
             totalPrice = finalizeOrder(itemToOrder, sizeOrder,sizePrice, specificCustomizationChoice, quantity, customizationPrice, addToCart, totalPrice);
 
+
             System.out.println("\nDo you want to add more items? (yes/no)");
             String addMoreItems = userChoice.nextLine();
-            if(addMoreItems.equalsIgnoreCase("no")){
+            if (addMoreItems.equalsIgnoreCase("no")) {
                 break;
-            }else if(!addMoreItems.equalsIgnoreCase("yes")&&!addMoreItems.equalsIgnoreCase("no")){
+            } else if (!addMoreItems.equalsIgnoreCase("yes") && !addMoreItems.equalsIgnoreCase("no")) {
                 System.out.println("Invalid add more item. Please try again.");
                 break;
             }
@@ -198,11 +187,17 @@ public class CashierServices {
             }catch(NumberFormatException e){
                 System.out.println("Invalid category number. Please try again.");
             }
+
+            System.out.println("Invalid category number. Please try again.");
         }
     }
 
     public static Item chooseItem(Scanner userChoice, String itemType, String itemCategory){
         List<Item> itemsInCategory = SQLDriver.sqlFindMenuItemsByCategory(itemCategory);
+        if(itemsInCategory.isEmpty()){
+            System.out.println("There is no available product for you chosen category");
+            return null;
+        }
         System.out.println("Here's the available " + itemCategory + " items:");
         Item itemToOrder = null;
 
@@ -238,18 +233,33 @@ public class CashierServices {
                 System.out.println("Invalid selection. Please try again.");
             }
 
-
         }
     }
 
     public static String chooseItemSize(Scanner userChoice, Item itemToOrder){
-        System.out.println("Sizes and Price: " + itemToOrder.getSizePrice());
-        System.out.println("Enter the size you want to buy (type cancel to exit):");
-        String sizeOrder = userChoice.nextLine().toLowerCase().trim();
-        if(sizeOrder.equalsIgnoreCase("cancel")){
-            return null;
+        String[] sizePrice = itemToOrder.getSizePrice().split(",");
+        List<String> sizes = new ArrayList<>();
+        for(String size : sizePrice){
+            String[] sizePriceParts = size.trim().split("=");
+            if(sizePriceParts.length == 2){
+                if(!sizes.contains(sizePriceParts[0].trim())){
+                    sizes.add(sizePriceParts[0].trim());
+                }
+            }
         }
-        return sizeOrder;
+
+        System.out.println("Sizes and Price: " + itemToOrder.getSizePrice());
+        while(true) {
+            System.out.println("Enter the size you want to buy (type cancel to exit):");
+            String sizeOrder = userChoice.nextLine().toLowerCase().trim();
+            if (sizeOrder.equalsIgnoreCase("cancel")) {
+                return null;
+            }else if (!sizes.contains(sizeOrder)) {
+                System.out.println("Invalid size. Please try again.");
+            }else{
+                return sizeOrder;
+            }
+        }
     }
 
     public static String chooseCustomizationCategory(Scanner userChoice, Item itemToOrder){
@@ -264,6 +274,11 @@ public class CashierServices {
                }
            }
         }
+
+        if(customizationsCategory.isEmpty()){
+            return "none";
+        }
+
         while(true){
             System.out.println("Here's the available " + itemToOrder.getName() + " customizations:");
             for(int i=0;i<customizationsCategory.size();i++){
@@ -306,7 +321,7 @@ public class CashierServices {
         }
 
         while(true){
-            System.out.println("Here's the available " + itemToOrder.getName() + customizationCategory + " customizations:");
+            System.out.println("Here's the available " + itemToOrder.getName() + " " + customizationCategory + " customizations:");
 
             for(int i = 0; i< specificCustomizations.size(); i++){
                 System.out.println("("+(i+1)+"): "+ specificCustomizations.get(i));
@@ -318,6 +333,8 @@ public class CashierServices {
                 return null;
             }else if(customizationsChoice.equalsIgnoreCase("none")){
                 return "none";
+            }else if(customizationsChoice.equalsIgnoreCase("others")){
+                return "others";
             }else {
                 try {
                     int choice = Integer.parseInt(customizationsChoice);
@@ -328,6 +345,7 @@ public class CashierServices {
                     System.out.println("Invalid category number. Please try again.");
                 }
             }
+            System.out.println("Invalid choice.Try again.");
         }
     }
     public static double finalizeOrder(Item itemToOrder, String sizeOrder, double sizePrice, String specificCustomizationChoice, int quantity, double customizationPrice, List<Transactions> addToCart, double totalPrice){
@@ -343,8 +361,26 @@ public class CashierServices {
                 quantity,
                 itemTotal
         ));
-        System.out.printf("Added %d x %s to your cart. Your subtotal: %.2f\n", quantity, itemToOrder.getName(), itemTotal);
+        System.out.printf("Added %d x %s to your cart. Your subtotal: %.2f\n", quantity, itemToOrder.getName(), totalPrice);
 
         return totalPrice;
+    }
+
+    public static int itemQuantity(Scanner userChoice){
+        while(true) {
+            System.out.println("Enter quantity");
+            int quantity;
+            try {
+                quantity = userChoice.nextInt();
+                userChoice.nextLine();
+                if (quantity <= 0) {
+                    System.out.println("Quantity must be greater than 0. Please try again.");
+                }
+                return quantity;
+            } catch (InputMismatchException e) {
+                System.out.println("Invalid quantity. Please enter a valid integer.");
+                userChoice.nextLine();
+            }
+        }
     }
 }
