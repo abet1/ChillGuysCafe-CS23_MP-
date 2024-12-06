@@ -287,7 +287,7 @@ public class ManagerServices {
 
     public static String checkValidityOfCustom(Scanner userInput, String customization) {
         do {
-            System.out.println("Enter customization and their corresponding prices (ex. Soy Milk=45, Oat Milk=40)");
+            System.out.println("Enter customization and their corresponding prices (ex.Milk=Soy Milk=45,Milk=Oat Milk=45,Toppings=Cocoa Powder=25)");
             System.out.print("Put 'None' if you have no customization: ");
             customization = userInput.nextLine().trim();
             if (customization.isEmpty()) {
