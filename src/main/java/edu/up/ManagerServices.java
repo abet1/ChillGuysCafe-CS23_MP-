@@ -1,12 +1,7 @@
 package edu.up;
 
-import com.opencsv.CSVReader;
-import com.opencsv.exceptions.CsvValidationException;
-
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -83,7 +78,7 @@ public class ManagerServices {
         System.out.println("\nModify Item");
         System.out.print("Enter the item code of the item you want to modify: ");
         String itemCode = userInput.nextLine().trim();
-        itemToModify = SQLDriver.sqlFindMenuItem(itemCode);
+        itemToModify = SQLDriver.sqlFindMenuItemByItemCode(itemCode);
 
         if (itemToModify == null) {
             System.out.println("Item with code" + itemCode + " does not exist in the menu.");
@@ -137,7 +132,7 @@ public class ManagerServices {
         System.out.print("Enter the item code of the item you want to delete: ");
         String itemCode = userInput.nextLine().trim();
 
-        itemToDelete = SQLDriver.sqlFindMenuItem(itemCode);
+        itemToDelete = SQLDriver.sqlFindMenuItemByItemCode(itemCode);
 
         if (itemToDelete == null) {
             System.out.println("Item with code" + itemCode + " does not exist in the menu.");
@@ -166,10 +161,28 @@ public class ManagerServices {
 
     public static String itemCodeGenerator(String category, String name){
         String categoryCode = category.substring(0, 1).toUpperCase() + category.substring(category.length()-1).toUpperCase();
+
         String nameCode = name.length() > 4 ? name.substring(0, 4).toUpperCase(): name.toUpperCase();
-        List<Item> items = CSVDriver.showItems();
-        long count = items.stream().filter(item -> item.getCategory().equalsIgnoreCase(category)).count();
-        String itemNumber = String.format("%03d", count+1);
+
+        List<Item> categoryitems = SQLDriver.sqlFindMenuItemsByCategory(category);
+        List<Integer> usedCodeNumbers = new ArrayList<>();
+
+        for(Item item : categoryitems){
+            String [] parts = item.getItemCode().split("-");
+            if(parts.length == 3){
+                try{
+                    usedCodeNumbers.add(Integer.parseInt(parts[2]));
+                }catch(NumberFormatException e){
+                    System.out.println("Invalid item code: " + item.getItemCode());
+                }
+            }
+        }
+
+        int availableNumber = 1;
+        while(usedCodeNumbers.contains(availableNumber)){
+            availableNumber++;
+        }
+        String itemNumber = String.format("%03d", availableNumber);
         return categoryCode +"-"+nameCode +"-"+ itemNumber;
     }
 }

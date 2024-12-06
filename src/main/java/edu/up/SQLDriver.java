@@ -116,9 +116,9 @@ public class SQLDriver {
         }
     }
 
-    public static Item sqlFindMenuItem(String itemCode) {
+    public static Item sqlFindMenuItemByItemCode(String itemCode) {
         Item item = null;
-        String findItem = "SELECT * FROM menu WHERE ItemCode = ?";
+        String findItem = "SELECT * FROM menu WHERE ItemCode = ? COLLATE NOCASE";
 
         try(Connection connection = SQLConnection.getConnection();
             PreparedStatement pstmt = connection.prepareStatement(findItem)){
@@ -141,8 +141,53 @@ public class SQLDriver {
         return item;
     }
 
+    public static List<Item> sqlFindMenuItemsByCategory(String category) {
+        List<Item> items = new ArrayList<>();
+        String findItem = "SELECT * FROM menu WHERE Category = ? COLLATE NOCASE";
 
-    public static void sqlEncodeItem(String filename){
+        try(Connection connection = SQLConnection.getConnection();
+            PreparedStatement pstmt = connection.prepareStatement(findItem)){
 
+            pstmt.setString(1, category);
+            ResultSet result = pstmt.executeQuery();
+            if(result.next()){
+                items.add(new ProductToSell(
+                        result.getString("itemCode"),
+                        result.getString("Name"),
+                        result.getString("ItemType"),
+                        result.getString("Category"),
+                        result.getString("SizePrice"),
+                        result.getString("Customizations")));
+            }
+        }catch(SQLException e){
+            System.out.println("Error finding menu item" + e.getMessage());
+        }
+
+        return items;
+    }
+
+    public static List<Item> sqlFindMenuItemsByItemType(String itemType){
+        List<Item> items = new ArrayList<>();
+        String findItem = "SELECT * FROM menu WHERE ItemType = ? COLLATE NOCASE";
+
+        try(Connection connection = SQLConnection.getConnection();
+            PreparedStatement pstmt = connection.prepareStatement(findItem)){
+
+            pstmt.setString(1, itemType);
+            ResultSet result = pstmt.executeQuery();
+            if(result.next()){
+                items.add(new ProductToSell(
+                        result.getString("itemCode"),
+                        result.getString("Name"),
+                        result.getString("ItemType"),
+                        result.getString("Category"),
+                        result.getString("SizePrice"),
+                        result.getString("Customizations")));
+            }
+        }catch(SQLException e){
+            System.out.println("Error finding menu item" + e.getMessage());
+        }
+
+        return items;
     }
 }

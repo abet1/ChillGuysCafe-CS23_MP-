@@ -1,25 +1,26 @@
 package edu.up;
 
-import com.opencsv.CSVWriter;
-
-import java.io.FileWriter;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Scanner;
+import java.math.BigDecimal;
 
 public class CashierServices {
     public static void placeOrder(Scanner userChoice){
-        List<Item> items = SQLDriver.sqlLoadMenuItems();
         List<Transactions> addToCart = new ArrayList<>();
+        String itemType;
         double totalPrice = 0.00;
 
         while(true){
 
             System.out.println("\nWhat type of item do you want to buy: (drink, food, merchandise)");
-            System.out.println("If you don't want to proceed type 'done'");
-            String itemType = userChoice.nextLine().trim();
+            System.out.println("If you don't want to proceed type 'cancel'");
+            itemType = userChoice.nextLine().trim().toLowerCase();
 
-            if(itemType.equalsIgnoreCase("done")){
+            if(itemType.equalsIgnoreCase("cancel")){
                 System.out.println("Exiting order process!");
                 break;
             }
@@ -29,12 +30,11 @@ public class CashierServices {
                 continue;
             }
 
+            List<Item> itemsInItemType = SQLDriver.sqlFindMenuItemsByItemType(itemType);
             ArrayList<String> categories = new ArrayList<>();
-            for (Item item : items) {
-                if(item.getItemType().equalsIgnoreCase(itemType)){
-                    if(!categories.contains(item.getCategory())){
-                        categories.add(item.getCategory());
-                    }
+            for (Item item : itemsInItemType) {
+                if(!categories.contains(item.getCategory())){
+                    categories.add(item.getCategory());
                 }
             }
 
@@ -44,34 +44,50 @@ public class CashierServices {
             }
 
             System.out.println("Here's the available " + itemType + " categories:");
-            for(String category : categories){
-                System.out.println(category);
+            for(int i=0;i<categories.size();i++){
+                System.out.println("("+(i+1)+"): "+categories.get(i));
             }
 
-            System.out.println("Enter the category you want to view");
+            System.out.println("Enter the category you want to view or type cancel to start again:");
             String selectedCategory = userChoice.nextLine().trim();
 
+            if(selectedCategory.equalsIgnoreCase("cancel")){
+                System.out.println("Going back to item type selection!");
+                continue;
+            }
 
+            List<Item> itemsInCategory = SQLDriver.sqlFindMenuItemsByCategory(selectedCategory);
             ArrayList<String> itemNames = new ArrayList<>();
-            for(Item item : items){
-                if(item.getItemType().equalsIgnoreCase(itemType)&&item.getName().equalsIgnoreCase(selectedCategory)){
+            for(Item item : itemsInCategory){
+                if(item.getItemType().equalsIgnoreCase(itemType)){
                     itemNames.add(item.getName());
                 }
             }
+
+            if(itemNames.isEmpty()){
+                System.out.println("There is no available product for you chosen category");
+                continue;
+            }
+
             System.out.println("\nItems in category " + selectedCategory + ":");
 
-            Item itemToOrder = null;
-            System.out.println("Enter the item code of order or type done to finish:");
-            String itemCodeOrder = userChoice.nextLine();
+            for(Item item : itemsInCategory){
+                System.out.println(item.getItemCode() + ":"+item.getName());
+            }
 
-            if(itemCodeOrder.equalsIgnoreCase("done")){
+            Item itemToOrder = null;
+            System.out.println("Enter the last 3 numbers of the item you want to order or type cancel to start again:");
+            String itemNumberOrder = userChoice.nextLine().trim();
+
+            if(itemNumberOrder.equalsIgnoreCase("cancel")){
+                System.out.println("Going back to item type selection!");
                 break;
             }
 
-            for(Item item : items){
-                if(item.getItemCode().equalsIgnoreCase(itemCodeOrder)){
+            for(Item item : itemsInCategory){
+                String itemNumber = item.getItemCode().substring(8);
+                if(itemNumber.equalsIgnoreCase(itemNumberOrder)){
                     itemToOrder = item;
-                    break;
                 }
             }
 
@@ -87,7 +103,7 @@ public class CashierServices {
                 System.out.println("Enter the size you want to buy:");
                 String sizeOrder = userChoice.nextLine().toLowerCase().trim();
 
-                double sizePrice = calculatePrice(itemToOrder.getSizePrice(), sizeOrder);
+                double sizePrice = calculatePrice(itemToOrder.getSizePrice().trim(), sizeOrder);
                 if (sizePrice == -1) {
                     System.out.println("Invalid size.");
                     continue;
@@ -97,6 +113,7 @@ public class CashierServices {
                 System.out.println("Enter the customization you want: ('None' for no customization, 'Others' for custom customization)");
                 String customization = userChoice.nextLine().toLowerCase().trim();
                 double customizationPrice = 0.00;
+
                 if(customization.equals("others")){
                     System.out.println("Enter the custom customization you want: ");
                     customization = userChoice.nextLine().toLowerCase().trim();
@@ -105,13 +122,29 @@ public class CashierServices {
                     customizationPrice = calculatePrice(itemToOrder.getCustomization(), customization);
                 }
 
+                if (customizationPrice == -1) {
+                    System.out.println("Invalid customization.");
+                    continue;
+                }
+
                 System.out.println("Enter quantity");
-                int quantity = userChoice.nextInt();
-                userChoice.nextLine();
+                int quantity;
+                try{
+                    quantity = userChoice.nextInt();
+                    userChoice.nextLine();
+                    if(quantity<=0){
+                        System.out.println("Quantity must be greater than 0. Please try again. The order is cancelled.");
+                        continue;
+                    }
+                }catch(InputMismatchException e){
+                    System.out.println("Invalid quantity. Please enter a valid integer. The order is cancelled.");
+                    userChoice.nextLine();
+                    continue;
+                }
 
-                double itemTotal = (sizePrice + customizationPrice)*quantity;
-                totalPrice += itemTotal;
 
+                double itemTotal = (sizePrice+customizationPrice)*quantity;
+                totalPrice = totalPrice + itemTotal;
                 addToCart.add(new Transactions(
                         itemToOrder.getItemCode(),
                         itemToOrder.getName(),
@@ -124,6 +157,16 @@ public class CashierServices {
                 ));
 
                 System.out.printf("Added %d x %s to your cart. Your subtotal: %.2f\n", quantity, itemToOrder.getName(), itemTotal);
+                System.out.println("\nDo you want to add more items? (yes/no)");
+                String addMoreItems = userChoice.nextLine().toLowerCase().trim();
+                if(addMoreItems.equals("yes")){
+                    continue;
+                }else if(addMoreItems.equals("no")){
+                    break;
+                }else{
+                    System.out.println("Invalid choice. Please try again.");
+                    break;
+                }
             }else if(yesOrNo.equals("no")){
                 continue;
             }else{
@@ -132,16 +175,22 @@ public class CashierServices {
             }
         }
 
-        if(!addToCart.isEmpty()){
-            receiptGenerator(addToCart, totalPrice);
-        }else{
-            System.out.println("No items added to your cart.");
+        System.out.println("\nDo you want to complete the transaction? (yes/no)");
+        String completeTransaction = userChoice.nextLine().toLowerCase().trim();
+        if(completeTransaction.equals("yes")){
+            if(!addToCart.isEmpty()){
+                receiptGenerator(addToCart, totalPrice);
+            }else{
+                System.out.println("No items added to your cart.");
+            }
+        }else if(completeTransaction.equals("no")){
+            System.out.println("Emptying your cart. Goodbye!");
         }
     }
 
     public static double calculatePrice(String choices, String userChoice) {
-        if(choices.equalsIgnoreCase("none")){
-            return 0.0;
+        if(userChoice.equalsIgnoreCase("none")){
+            return 0.00;
         }
 
         String[] choicesArray = choices.split(",");
