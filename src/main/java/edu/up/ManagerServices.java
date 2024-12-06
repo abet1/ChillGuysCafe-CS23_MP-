@@ -8,6 +8,8 @@ import java.util.Scanner;
 
 public class ManagerServices {
     public static void addItem(Scanner userInput){
+        boolean isDuplicate = false;
+        Item itemToAdd = null;
         System.out.println("\nAdd Item");
 
         String name;
@@ -42,22 +44,25 @@ public class ManagerServices {
         } while (category.isEmpty() || category.equalsIgnoreCase(itemType));
         category = editName(category);
 
-        String itemCode = itemCodeGenerator(category, name);
 
-        String sizePrice = checkValidityOfSize(userInput);
+        if (!checkIfNameIsDuplicate(name,itemType,category)) {
 
-        String customization = "None";
-        if (!itemType.equalsIgnoreCase("Merchandise")) {
-            customization = checkValidityOfCustom(userInput, customization);
-        }
+            String itemCode = itemCodeGenerator(category, name);
+
+            String sizePrice = checkValidityOfSize(userInput);
+
+            String customization = "None";
+            if (!itemType.equalsIgnoreCase("Merchandise")) {
+                customization = checkValidityOfCustom(userInput, customization);
+            }
             // This ensures that if non merchandise items with "None" is inputted as such
-        if(customization.equalsIgnoreCase("None")) {
-            customization = editName(customization);
+            if (customization.equalsIgnoreCase("None")) {
+                customization = editName(customization);
+            }
+
+
+            SQLDriver.sqlAddMenuItem(itemCode, name, itemType, category, sizePrice, customization);
         }
-
-
-
-        SQLDriver.sqlAddMenuItem(itemCode, name, itemType ,category, sizePrice, customization);
     }
 
     public static void encodeItem(Scanner userInput){
@@ -86,8 +91,12 @@ public class ManagerServices {
                         itemCode = itemCodeGenerator(itemCategory, itemName);
                     }
 
-                    SQLDriver.sqlAddMenuItem(itemCode, itemName, itemType, itemCategory, itemSize, customizations);
-                    System.out.println("Item " + itemCode +":"+itemName+ " added to the database");
+
+                    if (!checkIfNameIsDuplicate(itemName,itemType,itemCategory)) {
+                        SQLDriver.sqlAddMenuItem(itemCode, itemName, itemType, itemCategory, itemSize, customizations);
+                        System.out.println("Item " + itemCode +":"+itemName+ " added to the database");
+                    }
+
                 }else{
                     System.out.println("Invalid format in file line: " + line);
                 }
@@ -288,6 +297,22 @@ public class ManagerServices {
             }
         } while (customization.isEmpty() || !isValidInput(customization, true));
         return customization;
+    }
+
+    public static boolean checkIfNameIsDuplicate(String itemName, String itemType, String itemCategory ) {
+        List<Item> menuItems = SQLDriver.sqlFindMenuItemsByCategory(itemCategory);
+        boolean isDuplicate = false;
+        for(Item item : menuItems){
+            if(item.getItemType().equals(itemType)&&item.getName().equals(itemName)){
+                isDuplicate = true;
+            }
+        }
+
+        if(isDuplicate){
+            System.out.println(itemName+" is already taken as a name under item type " + itemType + " and category " + itemCategory);
+            return true;
+        }
+        return false;
     }
 
 
