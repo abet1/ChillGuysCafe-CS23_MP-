@@ -55,10 +55,6 @@ public class CashierServices {
                 } else if (specificCustomizationChoice.equalsIgnoreCase("none")) {
                     customizationPrice = 0.00;
                     specificCustomizationChoice = "none";
-                } else if(specificCustomizationChoice.equalsIgnoreCase("others")) {
-                    System.out.println("Enter you custom customization");
-                    specificCustomizationChoice = userChoice.nextLine();
-                    customizationPrice = 25.00;
                 }else {
                     customizationPrice = calculatePrice(itemToOrder.getCustomization(), specificCustomizationChoice);
                 }
@@ -183,12 +179,13 @@ public class CashierServices {
                 int choice = Integer.parseInt(category);
                 if(choice>=1 && choice<=categories.size()){
                     return categories.get(choice-1);
+                }else{
+                    System.out.println("Invalid category number. Please try again.");
                 }
             }catch(NumberFormatException e){
-                System.out.println("Invalid category number. Please try again.");
+                System.out.println("Invalid input. Please try again.");
             }
 
-            System.out.println("Invalid category number. Please try again.");
         }
     }
 
@@ -243,7 +240,7 @@ public class CashierServices {
             String[] sizePriceParts = size.trim().split("=");
             if(sizePriceParts.length == 2){
                 if(!sizes.contains(sizePriceParts[0].trim())){
-                    sizes.add(sizePriceParts[0].trim());
+                    sizes.add(sizePriceParts[0].trim().toLowerCase());
                 }
             }
         }
@@ -326,15 +323,13 @@ public class CashierServices {
             for(int i = 0; i< specificCustomizations.size(); i++){
                 System.out.println("("+(i+1)+"): "+ specificCustomizations.get(i));
             }
-            System.out.println("Enter the number of your choice (type cancel to exit, or type none if you don't want customization, or type others for custom customization): ");
+            System.out.println("Enter the number of your choice (type cancel to exit, or type none if you don't want customization): ");
 
             String customizationsChoice = userChoice.nextLine().trim();
             if(customizationsChoice.equalsIgnoreCase("cancel")){
                 return null;
             }else if(customizationsChoice.equalsIgnoreCase("none")){
                 return "none";
-            }else if(customizationsChoice.equalsIgnoreCase("others")){
-                return "others";
             }else {
                 try {
                     int choice = Integer.parseInt(customizationsChoice);
