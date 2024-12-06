@@ -9,18 +9,54 @@ import java.util.Scanner;
 public class ManagerServices {
     public static void addItem(Scanner userInput){
         System.out.println("\nAdd Item");
-        System.out.print("Enter Name: ");
-        String name = userInput.nextLine();
-        System.out.print("Enter Item Type: ");
-        String itemType = userInput.nextLine();
-        System.out.print("Enter Category: ");
-        String category = userInput.nextLine();
-        System.out.print("Enter Sizes and their corresponding prices (ex. Small=99, Medium=149, Large=199):  ");
-        String sizePrice = userInput.nextLine();
-        System.out.print("Enter customization and their corresponding prices (ex. Soy Milk=45, Oat Milk=40) ");
-        String customization = userInput.nextLine();
+
+        String name;
+        do {
+            System.out.print("Enter Name: ");
+            name = userInput.nextLine().trim();
+            if (name.isEmpty()) {
+                System.out.println("Error: Name cannot be empty. Please enter a valid name.");
+            }
+        } while (name.isEmpty());
+
+        String itemType;
+        do {
+            System.out.print("Enter Item Type (Drink, Food, Merchandise): ");
+            itemType = userInput.nextLine().trim();
+            if (!(itemType.equalsIgnoreCase("Drink") || itemType.equalsIgnoreCase("Food") || itemType.equalsIgnoreCase("Merchandise"))) {
+                System.out.println("Invalid input. Please only enter Drink, Food, or Merchandise.");
+            }
+        } while (!(itemType.equalsIgnoreCase("Drink") || itemType.equalsIgnoreCase("Food") || itemType.equalsIgnoreCase("Merchandise")));
+
+        itemType = editName(itemType);
+
+        String category;
+        do {
+            System.out.print("Enter Category: ");
+            category = userInput.nextLine().trim();
+            if (category.isEmpty()) {
+                System.out.println("Error: Category cannot be empty. Please enter a valid category.");
+            } else if (category.equalsIgnoreCase(itemType)) {
+                System.out.println("Please add a category that is different from item type.");
+            }
+        } while (category.isEmpty() || category.equalsIgnoreCase(itemType));
+        category = editName(category);
 
         String itemCode = itemCodeGenerator(category, name);
+
+        String sizePrice = checkValidityOfSize(userInput);
+
+        String customization = "None";
+        if (!itemType.equalsIgnoreCase("Merchandise")) {
+            customization = checkValidityOfCustom(userInput, customization);
+        }
+            // This ensures that if non merchandise items with "None" is inputted as such
+        if(customization.equalsIgnoreCase("None")) {
+            customization = editName(customization);
+        }
+
+
+
         SQLDriver.sqlAddMenuItem(itemCode, name, itemType ,category, sizePrice, customization);
     }
 
@@ -75,49 +111,53 @@ public class ManagerServices {
 
     public static void modifyItem(Scanner userInput){
         Item itemToModify = null;
+
         System.out.println("\nModify Item");
         System.out.print("Enter the item code of the item you want to modify: ");
         String itemCode = userInput.nextLine().trim();
         itemToModify = SQLDriver.sqlFindMenuItemByItemCode(itemCode);
 
-        if (itemToModify == null) {
-            System.out.println("Item with code" + itemCode + " does not exist in the menu.");
+        if(itemToModify == null){
+            System.out.println("Error: Item not found. Please enter a valid item code.");
             return;
         }
-
-        System.out.println("\n Current details of item " + itemToModify.getItemCode());
+        System.out.println("\nCurrent details of item " + itemToModify.getItemCode());
         System.out.println("Name: " + itemToModify.getName());
         System.out.println("Category: " + itemToModify.getCategory());
         System.out.println("Size and Price: " + itemToModify.getSizePrice());
-        System.out.println("Customization: " + itemToModify.getCustomization());
-
+        System.out.println("Customization: " + itemToModify.getCustomization());// will output None for merchandise items
         String choice = "0";
+
         while(!choice.equals("3")) {
-            System.out.println("What do you want to modify?");
+            System.out.println("\nWhat do you want to modify?");
             System.out.println("1. Size and Price");
-            System.out.println("2. Customization");
+            // does not output if the item is classified as merchandise
+            if (!itemToModify.getItemType().equalsIgnoreCase("Merchandise")) {
+                System.out.println("2. Customization");
+            }
             System.out.println("3. Exit");
             choice = userInput.nextLine().trim();
-
-
             switch (choice) {
-                case "1":
-                    System.out.print("Enter the new size and prices of the item: ");
-                    String newSizePrice = userInput.nextLine();
-                    itemToModify.setSizePrice(newSizePrice);
-                    break;
-                case "2":
-                    System.out.print("Enter the new customizations of the item: ");
-                    String newCustomization = userInput.nextLine();
-                    itemToModify.setCustomization(newCustomization);
-                    break;
-                case "3":
-                    System.out.print("Exiting modify item menu. Goodbye!");
-                    break;
-                default:
-                    System.out.println("Invalid choice. Try again.");
+                    case "1":
+                        String newSizePrice = checkValidityOfSize(userInput); // validates if new size price is in the correct format
+                        itemToModify.setSizePrice(newSizePrice);
+                        break;
+                    case "2":
+                        String newCustomization = "None";
+                        if (!itemToModify.getItemType().equalsIgnoreCase("Merchandise")) {
+                            newCustomization = checkValidityOfCustom(userInput, newCustomization); // validates if customization is in correct format
+                            itemToModify.setCustomization(newCustomization);
+                        } else { // if user accidentally presses 2 in the menu
+                            System.out.println("Cannot modify customization for merchandise items.\n");
+                        }
+                        break;
+                    case "3":
+                        System.out.print("Exiting modify item menu. Goodbye!\n");
+                        break;
+                    default:
+                        System.out.println("Invalid choice. Try again.");
+                }
             }
-        }
         String sizePrice=itemToModify.getSizePrice();
         String customizations=itemToModify.getCustomization();
 
@@ -160,10 +200,21 @@ public class ManagerServices {
     }
 
     public static String itemCodeGenerator(String category, String name){
-        String categoryCode = category.substring(0, 1).toUpperCase() + category.substring(category.length()-1).toUpperCase();
+        String categoryCode;
+        if (category.length() < 2) {
+            categoryCode = category.substring(0, 1).toUpperCase() + "0";
+        } else {
+            categoryCode = category.substring(0, 1).toUpperCase() + category.substring(category.length() - 1).toUpperCase();
+        }
 
-        String nameCode = name.length() > 4 ? name.substring(0, 4).toUpperCase(): name.toUpperCase();
-
+        // ensures name code is exactly 4 characters, replaces with '0' if necessary
+        String nameCode = name.toUpperCase();
+        if (nameCode.length() < 4) {
+            nameCode = String.format("%-4s", nameCode).replace(' ', '0'); // Pad with '0'
+        } else {
+            nameCode = nameCode.substring(0, 4);
+        }
+        
         List<Item> categoryitems = SQLDriver.sqlFindMenuItemsByCategory(category);
         List<Integer> usedCodeNumbers = new ArrayList<>();
 
@@ -185,4 +236,59 @@ public class ManagerServices {
         String itemNumber = String.format("%03d", availableNumber);
         return categoryCode +"-"+nameCode +"-"+ itemNumber;
     }
+
+    public static String editName(String originalName) {
+        return originalName.substring(0, 1).toUpperCase() + originalName.substring(1).toLowerCase();
+    }
+
+    public static boolean isValidInput(String input, boolean isCustomization) {
+        // checks if input is empty
+        if (input.isEmpty()) {
+            return false; // Return false if input is empty
+        }
+        // defines the regex for a single "key=value" pair (e.g., Small=99 or Soy Milk=45)
+        String pairRegex = "[a-zA-Z\\s]+=[0-9]+";
+        // defines the regex for multiple "key=value" pairs separated by commas
+        String multiplePairsRegex = pairRegex + "(,\\s*" + pairRegex + ")*";
+        // if it's a customization, allow 'None' or valid key-value pairs
+        if (isCustomization) {
+            if (input.equalsIgnoreCase("None")) {
+                return true; // 'None' is allowed for customization
+            }
+            // otherwise, validates using the multiplePairsRegex
+            return input.matches(multiplePairsRegex);
+        }
+        // for sizes and prices, validates using the same multiplePairsRegex
+        return input.matches(multiplePairsRegex);
+    }
+
+    public static String checkValidityOfSize(Scanner userInput) {
+        String sizePrice;
+        do {
+            System.out.print("Enter Sizes and their corresponding prices (ex. Small=99, Medium=149, Large=199):  ");
+            sizePrice = userInput.nextLine().trim();
+            if (sizePrice.isEmpty()) {
+                System.out.println("Error: Size and price cannot be empty. Please enter valid sizes and prices.");
+            } else if (!isValidInput(sizePrice, false)) {
+                System.out.println("Invalid format for sizes and prices. Please use the correct format (e.g., Small=99).");
+            }
+        } while (sizePrice.isEmpty() || !isValidInput(sizePrice, false));
+        return sizePrice;
+    }
+
+    public static String checkValidityOfCustom(Scanner userInput, String customization) {
+        do {
+            System.out.println("Enter customization and their corresponding prices (ex. Soy Milk=45, Oat Milk=40)");
+            System.out.print("Put 'None' if you have no customization: ");
+            customization = userInput.nextLine().trim();
+            if (customization.isEmpty()) {
+                System.out.println("Error: Customization cannot be empty. Please enter a valid customization or 'None'.");
+            } else if (!isValidInput(customization, true)) {
+                System.out.println("Invalid customization format. Please use the correct format (e.g., Soy Milk=45) or 'None' for no customization.");
+            }
+        } while (customization.isEmpty() || !isValidInput(customization, true));
+        return customization;
+    }
+
+
 }
