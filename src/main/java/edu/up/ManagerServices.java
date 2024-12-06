@@ -214,7 +214,7 @@ public class ManagerServices {
         } else {
             nameCode = nameCode.substring(0, 4);
         }
-        
+
         List<Item> categoryitems = SQLDriver.sqlFindMenuItemsByCategory(category);
         List<Integer> usedCodeNumbers = new ArrayList<>();
 
