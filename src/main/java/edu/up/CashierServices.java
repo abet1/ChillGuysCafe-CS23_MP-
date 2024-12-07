@@ -32,11 +32,16 @@ public class CashierServices {
             }
 
             String sizeOrder = chooseItemSize(userChoice,itemToOrder);
+            if(sizeOrder == null){
+                System.out.println("Order cancelled.Bye!");
+                break;
+            }
             double sizePrice = calculatePrice(itemToOrder.getSizePrice().trim(), sizeOrder);
             if (sizePrice == -1) {
                 System.out.println("Invalid size.");
                 continue;
             }
+
 
             double customizationPrice = 0.00;
             String specificCustomizationChoice = "none";
@@ -195,13 +200,14 @@ public class CashierServices {
             System.out.println("There is no available product for you chosen category");
             return null;
         }
+
         System.out.println("Here's the available " + itemCategory + " items:");
-        Item itemToOrder = null;
 
         for(Item item : itemsInCategory){
             System.out.println(item.getItemCode() + ": " + item.getName());
         }
         while(true){
+            Item itemToOrder = null;
             System.out.println("Enter the last 3 number of the item code of your chosen item or type cancel to exit");
             String itemChoice = userChoice.nextLine().trim();
 
@@ -209,11 +215,10 @@ public class CashierServices {
                 return null;
             }
 
-            for(Item item : itemsInCategory){
-                if(item.getItemCode().endsWith(itemChoice)){
-                    itemToOrder = item;
-                }else{
-                    itemToOrder = null;
+            for(int i=0;i<itemsInCategory.size();i++){
+                String itemNumber = itemsInCategory.get(i).getItemCode().substring(8);
+                if(itemNumber.equalsIgnoreCase(itemChoice)){
+                    itemToOrder = itemsInCategory.get(i);
                 }
             }
 
@@ -227,9 +232,9 @@ public class CashierServices {
                 }else{
                     System.out.println("Invalid selection. Please try again.");
                 }
+            }else{
+                System.out.println("Invalid input. Please try again.");
             }
-
-            System.out.println("Item not found. Please try again.");
 
         }
     }
