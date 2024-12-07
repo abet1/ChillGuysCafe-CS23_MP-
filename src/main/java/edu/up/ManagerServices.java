@@ -1,7 +1,12 @@
 package edu.up;
 
+import com.opencsv.CSVReader;
+import com.opencsv.exceptions.CsvValidationException;
+
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -67,25 +72,20 @@ public class ManagerServices {
 
     public static void encodeItem(Scanner userInput){
         System.out.println("\nEncode Item");
-        System.out.print("Enter the filename to encode items(txt file): ");
+        System.out.print("Enter the filename of encode items(csv file): ");
         String filename = userInput.nextLine();
         List<Item> items = SQLDriver.sqlLoadMenuItems();
 
-        try{
-            File file = new File(filename);
-            Scanner fileReader = new Scanner(file);
-
-
-            while(fileReader.hasNextLine()){
-                String line = fileReader.nextLine();
-                String [] itemInformation = line.split(",");
-                if(itemInformation.length == 6){
-                    String itemCode = itemInformation[0];
-                    String itemName = itemInformation[1];
-                    String itemType = itemInformation[2];
-                    String itemCategory = itemInformation[3];
-                    String itemSize = itemInformation[4];
-                    String customizations = itemInformation[5];
+        try(CSVReader filereader = new CSVReader(new FileReader(filename))){
+            String[] nextLine;
+            while((nextLine = filereader.readNext()) != null){
+                if(nextLine.length == 6){
+                    String itemCode = nextLine[0];
+                    String itemName = nextLine[1];
+                    String itemType = nextLine[2];
+                    String itemCategory = nextLine[3];
+                    String itemSize = nextLine[4];
+                    String customizations = nextLine[5];
 
                     if (itemCode == null || itemCode.isBlank() || isDuplicateItemCode(items, itemCode)){
                         itemCode = itemCodeGenerator(itemCategory, itemName);
@@ -98,12 +98,13 @@ public class ManagerServices {
                     }
 
                 }else{
-                    System.out.println("Invalid format in file line: " + line);
+                    System.out.println("Invalid format in file line: " + nextLine);
                 }
             }
-
-        }catch(FileNotFoundException e){
-            System.out.println("File not found" + e.getMessage());
+        }catch(IOException e){
+            System.out.println("Error reading file" + e);
+        } catch (CsvValidationException e) {
+            System.out.println("Invalid format" + e);
         }
     }
 
@@ -184,11 +185,11 @@ public class ManagerServices {
         itemToDelete = SQLDriver.sqlFindMenuItemByItemCode(itemCode);
 
         if (itemToDelete == null) {
-            System.out.println("Item with code" + itemCode + " does not exist in the menu.");
+            System.out.println("Item with code " + itemCode + " does not exist in the menu.");
             return;
         }
 
-        System.out.println("\n Current details of item " + itemToDelete);
+        System.out.println("\nCurrent details of item " + itemToDelete.getItemCode());
         System.out.println("Name: " + itemToDelete.getName());
         System.out.println("Category: " + itemToDelete.getCategory());
         System.out.println("Size and Price: " + itemToDelete.getSizePrice());
