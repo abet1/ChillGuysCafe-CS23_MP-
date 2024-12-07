@@ -273,7 +273,7 @@ public class ManagerServices {
         }
 
         // defines the regex for a single "key=value" pair (e.g., Small=99 or Soy Milk=45)
-        String pairRegex = "[a-zA-Z\\s]+=[a-zA-Z\\s]+=[0-9]+";
+        String pairRegex = isCustomization ? "[a-zA-Z\\s]+=[a-zA-Z\\s]+=[0-9]+": "[a-zA-Z\\s]+=[0-9]+";
         // defines the regex for multiple "key=value" pairs separated by commas
         String multiplePairsRegex = pairRegex + "(,\\s*" + pairRegex + ")*";
         // if it's a customization, allow 'None' or valid key-value pairs
@@ -288,26 +288,6 @@ public class ManagerServices {
         return input.matches(multiplePairsRegex);
     }
 
-    public static boolean isValidInputForSizePrice(String input, boolean isCustomization) {
-        // checks if input is empty
-        if (input.isEmpty()) {
-            return false; // Return false if input is empty
-        }
-        // defines the regex for a single "key=value" pair (e.g., Small=99 or Soy Milk=45)
-        String pairRegex = "[a-zA-Z\\s]+=[0-9]+";
-        // defines the regex for multiple "key=value" pairs separated by commas
-        String multiplePairsRegex = pairRegex + "(,\\s*" + pairRegex + ")*";
-        // if it's a customization, allow 'None' or valid key-value pairs
-        if (isCustomization) {
-            if (input.equalsIgnoreCase("None")) {
-                return true; // 'None' is allowed for customization
-            }
-            // otherwise, validates using the multiplePairsRegex
-            return input.matches(multiplePairsRegex);
-        }
-        // for sizes and prices, validates using the same multiplePairsRegex
-        return input.matches(multiplePairsRegex);
-    }
 
     public static String checkValidityOfSize(Scanner userInput) {
         String sizePrice;
@@ -316,10 +296,10 @@ public class ManagerServices {
             sizePrice = userInput.nextLine().trim();
             if (sizePrice.isEmpty()) {
                 System.out.println("Error: Size and price cannot be empty. Please enter valid sizes and prices.");
-            } else if (!isValidInputForSizePrice(sizePrice, false)) {
+            } else if (!isValidInput(sizePrice, false)) {
                 System.out.println("Invalid format for sizes and prices. Please use the correct format (e.g., Small=99).");
             }
-        } while (sizePrice.isEmpty() || !isValidInputForSizePrice(sizePrice, false));
+        } while (sizePrice.isEmpty() || !isValidInput(sizePrice, false));
         return sizePrice;
     }
 
