@@ -131,7 +131,7 @@ public class CashierServices {
 
     public static String chooseItemType(Scanner userChoice){
         while(true) {
-            System.out.println("\nWhat type of item do you want to buy: (drink, food, merchandise)");
+            System.out.println("\nWhat is your chosen item type: (drink, food, merchandise)");
             System.out.println("If you don't want to proceed type 'cancel'");
             String itemType = userChoice.nextLine().trim().toLowerCase();
 
@@ -202,7 +202,7 @@ public class CashierServices {
             System.out.println(item.getItemCode() + ": " + item.getName());
         }
         while(true){
-            System.out.println("Enter the last 3 number of the item code you want to order or type cancel to exit");
+            System.out.println("Enter the last 3 number of the item code of your chosen item or type cancel to exit");
             String itemChoice = userChoice.nextLine().trim();
 
             if(itemChoice.equalsIgnoreCase("cancel")){

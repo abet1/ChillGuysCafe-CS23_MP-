@@ -3,13 +3,13 @@ package edu.up;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+
+import static edu.up.CashierServices.chooseCategory;
 
 public class ManagerServices {
     public static void addItem(Scanner userInput){
@@ -123,9 +123,13 @@ public class ManagerServices {
         Item itemToModify = null;
 
         System.out.println("\nModify Item");
-        System.out.print("Enter the item code of the item you want to modify: ");
-        String itemCode = userInput.nextLine().trim();
-        itemToModify = SQLDriver.sqlFindMenuItemByItemCode(itemCode);
+        String itemType = CashierServices.chooseItemType(userInput);
+
+        String itemCategory = chooseCategory(userInput, itemType);
+
+
+        itemToModify = CashierServices.chooseItem(userInput, itemType, itemCategory);
+
 
         if(itemToModify == null){
             System.out.println("Error: Item not found. Please enter a valid item code.");
@@ -171,7 +175,7 @@ public class ManagerServices {
         String sizePrice=itemToModify.getSizePrice();
         String customizations=itemToModify.getCustomization();
 
-        SQLDriver.sqlModifyMenuItem(itemCode, sizePrice, customizations);
+        SQLDriver.sqlModifyMenuItem(itemToModify.getItemCode(), sizePrice, customizations);
 
 
     }
@@ -179,10 +183,23 @@ public class ManagerServices {
     public static void deleteItem(Scanner userInput){
         Item itemToDelete = null;
         System.out.println("\nDelete Item");
-        System.out.print("Enter the item code of the item you want to delete: ");
-        String itemCode = userInput.nextLine().trim();
 
-        itemToDelete = SQLDriver.sqlFindMenuItemByItemCode(itemCode);
+
+        String itemType = CashierServices.chooseItemType(userInput);
+        if(itemType == null){
+            System.out.println("Delete item cancelled.Bye!");
+            return;
+        }
+
+        String selectedCategory = CashierServices.chooseCategory(userInput, itemType);
+        if(selectedCategory == null){
+            System.out.println("Delete item cancelled.Bye!");
+            return;
+        }
+
+        itemToDelete = CashierServices.chooseItem(userInput, itemType, selectedCategory);
+        String itemCode = itemToDelete.getItemCode();
+
 
         if (itemToDelete == null) {
             System.out.println("Item with code " + itemCode + " does not exist in the menu.");
@@ -257,6 +274,27 @@ public class ManagerServices {
             return false; // Return false if input is empty
         }
         // defines the regex for a single "key=value" pair (e.g., Small=99 or Soy Milk=45)
+        String pairRegex = "[a-zA-Z\\s]+=[a-zA-Z\\s]+=[0-9]+";
+        // defines the regex for multiple "key=value" pairs separated by commas
+        String multiplePairsRegex = pairRegex + "(,\\s*" + pairRegex + ")*";
+        // if it's a customization, allow 'None' or valid key-value pairs
+        if (isCustomization) {
+            if (input.equalsIgnoreCase("None")) {
+                return true; // 'None' is allowed for customization
+            }
+            // otherwise, validates using the multiplePairsRegex
+            return input.matches(multiplePairsRegex);
+        }
+        // for sizes and prices, validates using the same multiplePairsRegex
+        return input.matches(multiplePairsRegex);
+    }
+
+    public static boolean isValidInputForSizePrice(String input, boolean isCustomization) {
+        // checks if input is empty
+        if (input.isEmpty()) {
+            return false; // Return false if input is empty
+        }
+        // defines the regex for a single "key=value" pair (e.g., Small=99 or Soy Milk=45)
         String pairRegex = "[a-zA-Z\\s]+=[0-9]+";
         // defines the regex for multiple "key=value" pairs separated by commas
         String multiplePairsRegex = pairRegex + "(,\\s*" + pairRegex + ")*";
@@ -279,10 +317,10 @@ public class ManagerServices {
             sizePrice = userInput.nextLine().trim();
             if (sizePrice.isEmpty()) {
                 System.out.println("Error: Size and price cannot be empty. Please enter valid sizes and prices.");
-            } else if (!isValidInput(sizePrice, false)) {
+            } else if (!isValidInputForSizePrice(sizePrice, false)) {
                 System.out.println("Invalid format for sizes and prices. Please use the correct format (e.g., Small=99).");
             }
-        } while (sizePrice.isEmpty() || !isValidInput(sizePrice, false));
+        } while (sizePrice.isEmpty() || !isValidInputForSizePrice(sizePrice, false));
         return sizePrice;
     }
 
@@ -294,7 +332,7 @@ public class ManagerServices {
             if (customization.isEmpty()) {
                 System.out.println("Error: Customization cannot be empty. Please enter a valid customization or 'None'.");
             } else if (!isValidInput(customization, true)) {
-                System.out.println("Invalid customization format. Please use the correct format (e.g., Soy Milk=45) or 'None' for no customization.");
+                System.out.println("Invalid customization format. Please use the correct format (e.g., Milk=Soy Milk=45) or 'None' for no customization.");
             }
         } while (customization.isEmpty() || !isValidInput(customization, true));
         return customization;
