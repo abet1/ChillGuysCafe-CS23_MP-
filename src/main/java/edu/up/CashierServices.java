@@ -215,10 +215,10 @@ public class CashierServices {
                 return null;
             }
 
-            for(int i=0;i<itemsInCategory.size();i++){
-                String itemNumber = itemsInCategory.get(i).getItemCode().substring(8);
+            for(Item item : itemsInCategory){
+                String itemNumber = item.getItemCode().substring(8);
                 if(itemNumber.equalsIgnoreCase(itemChoice)){
-                    itemToOrder = itemsInCategory.get(i);
+                    itemToOrder = item;
                 }
             }
 
