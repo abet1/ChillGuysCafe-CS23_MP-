@@ -50,7 +50,7 @@ public class SQLDriver {
             pstmt.setString(6, customizations);
 
             pstmt.executeUpdate();
-            System.out.println("Item added to the menu successfully");
+            System.out.println("Item "+ itemCode +":"+ name +" added to the menu successfully");
         }catch(SQLException e){
             System.out.println("Error adding menu item" + e.getMessage());
         }
