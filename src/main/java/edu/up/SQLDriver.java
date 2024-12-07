@@ -18,18 +18,8 @@ public class SQLDriver {
                     "SizePrice TEXT NOT NULL,"+
                     "Customizations TEXT);";
 
-            String createTransactions = "CREATE TABLE IF NOT EXISTS transactions ("+
-                    "orderno INTEGER PRIMARY KEY AUTOINCREMENT, "+
-                    "ItemCode TEXT NOT NULL, "+
-                    "Name TEXT NOT NULL, "+
-                    "Category TEXT NOT NULL,"+
-                    "Size TEXT NOT NULL,"+
-                    "Customizations TEXT,"+
-                    "Quantity INTEGER NOT NULL,"+
-                    "TotalPrice REAL NOT NULL);";
 
             stmt.executeUpdate(createMenu);
-            stmt.executeUpdate(createTransactions);
 
 
         }catch(SQLException e){
