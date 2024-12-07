@@ -87,12 +87,10 @@ public class ManagerServices {
                     String itemSize = nextLine[4];
                     String customizations = nextLine[5];
 
-                    if (itemCode == null || itemCode.isBlank() || isDuplicateItemCode(items, itemCode)){
-                        itemCode = itemCodeGenerator(itemCategory, itemName);
-                    }
-
-
                     if (!checkIfNameIsDuplicate(itemName,itemType,itemCategory)) {
+                        if (itemCode == null || itemCode.isBlank() || isDuplicateItemCode(items, itemCode)){
+                            itemCode = itemCodeGenerator(itemCategory, itemName);
+                        }
                         SQLDriver.sqlAddMenuItem(itemCode, itemName, itemType, itemCategory, itemSize, customizations);
                         System.out.println("Item " + itemCode +":"+itemName+ " added to the database");
                     }
@@ -273,6 +271,7 @@ public class ManagerServices {
         if (input.isEmpty()) {
             return false; // Return false if input is empty
         }
+
         // defines the regex for a single "key=value" pair (e.g., Small=99 or Soy Milk=45)
         String pairRegex = "[a-zA-Z\\s]+=[a-zA-Z\\s]+=[0-9]+";
         // defines the regex for multiple "key=value" pairs separated by commas

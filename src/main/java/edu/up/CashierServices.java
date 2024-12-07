@@ -210,25 +210,26 @@ public class CashierServices {
             }
 
             for(Item item : itemsInCategory){
-                String itemNumber = item.getItemCode().substring(8);
-                if(itemNumber.equalsIgnoreCase(itemChoice)){
+                if(item.getItemCode().endsWith(itemChoice)){
                     itemToOrder = item;
+                }else{
+                    itemToOrder = null;
                 }
             }
-            if(itemToOrder == null){
-                System.out.println("Item not found. Please try again.");
-                continue;
+
+            if(itemToOrder != null){
+                System.out.println("You selected " + itemToOrder.getName() + ". Are you sure? (yes/no)");
+                String yesOrNo = userChoice.nextLine().toLowerCase().trim();
+                if(yesOrNo.equalsIgnoreCase("yes")){
+                    return itemToOrder;
+                }else if(yesOrNo.equalsIgnoreCase("no")){
+                    System.out.println("Restarting selecting item!");
+                }else{
+                    System.out.println("Invalid selection. Please try again.");
+                }
             }
 
-            System.out.println("You selected " + itemToOrder.getName() + ". Are you sure? (yes/no)");
-            String yesOrNo = userChoice.nextLine().toLowerCase().trim();
-            if(yesOrNo.equalsIgnoreCase("yes")){
-                return itemToOrder;
-            }else if(yesOrNo.equalsIgnoreCase("no")){
-                System.out.println("Restarting selecting item!");
-            }else{
-                System.out.println("Invalid selection. Please try again.");
-            }
+            System.out.println("Item not found. Please try again.");
 
         }
     }
